@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Book Facility | Sport Facility Booking</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="assets/css/navbar.css" />
+</head>
+<body>
+  <!-- Navbar placeholder -->
+  <div id="navbar"></div>
+
+  <div class="container">
+    <h2>Book a Sport Facility</h2>
+    <label>Choose Facility:</label>
+    <select id="facility">
+      <option value="Basketball Court">Basketball Court</option>
+      <option value="Badminton Court 1">Badminton Court 1</option>
+      <option value="Badminton Court 2">Badminton Court 2</option>
+      <option value="Soccer Field">Soccer Field</option>
+      <option value="Gym">Gym</option>
+    </select>
+
+    <label>Date:</label>
+    <input type="date" id="date" required />
+
+    <label>Start Time:</label>
+    <input type="time" id="startTime" required />
+
+    <label>End Time:</label>
+    <input type="time" id="endTime" required />
+
+    <label>Notes:</label>
+    <textarea id="notes" placeholder="e.g. Team practice"></textarea>
+
+    <button id="bookBtn">Book Now</button>
+  </div>
+
+  <!-- Load navbar dynamically -->
+  <script>
+    fetch("navbar.html")
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById("navbar").innerHTML = data;
+      });
+  </script>
+
+  <!-- Firebase booking logic -->
+  <script type="module" src="assets/js/booking.js"></script>
+</body>
+</html>
