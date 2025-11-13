@@ -1,28 +1,13 @@
 import { auth, db } from "./firebaseConfig.js";
-import {
-  onAuthStateChanged,
-  signOut
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-import {
-  addDoc,
-  collection,
-  getDocs,
-  query,
-  where
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { addDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 const bookBtn = document.getElementById("bookBtn");
-const logoutBtn = document.getElementById("logoutBtn");
 
 onAuthStateChanged(auth, (user) => {
   if (!user) {
     window.location.href = "index.html";
   }
-});
-
-logoutBtn.addEventListener("click", async () => {
-  await signOut(auth);
-  window.location.href = "index.html";
 });
 
 bookBtn.addEventListener("click", async () => {

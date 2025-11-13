@@ -51,13 +51,8 @@
     <p>© 2025 Sport Facility Booking. All rights reserved.</p>
   </footer>
 
-  <!-- Load navbar dynamically -->
-  <script>
-    fetch("navbar.html")
-      .then(response => response.text())
-      .then(data => {
-        document.getElementById("navbar").innerHTML = data;
-      });
-  </script>
+  <!-- Load the navbar dynamically -->
+  <script type="module" src="assets/js/navbar.js"></script>
+
 </body>
 </html>

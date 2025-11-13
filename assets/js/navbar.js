@@ -1,4 +1,6 @@
-// assets/js/navbar.js
+// navbar.js
+import { auth } from "./firebaseConfig.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   // Load navbar
@@ -7,30 +9,38 @@ document.addEventListener("DOMContentLoaded", () => {
     .then(html => {
       document.getElementById("navbar").innerHTML = html;
 
-      // After loading navbar, check user state
-      const user = JSON.parse(localStorage.getItem("user"));
       const loginLink = document.getElementById("loginLink");
       const registerLink = document.getElementById("registerLink");
       const welcomeMsg = document.getElementById("welcomeMsg");
       const logoutLink = document.getElementById("logoutLink");
 
-      if (user && user.email) {
-        // Extract name from email
-        const username = user.email.split("@")[0];
-        welcomeMsg.textContent = `Welcome, ${username}`;
-        welcomeMsg.style.display = "inline";
-        logoutLink.style.display = "inline";
-        loginLink.style.display = "none";
-        registerLink.style.display = "none";
-      }
+      // Listen to Firebase auth state
+      onAuthStateChanged(auth, (user) => {
+        if (user && user.emailVerified) {
+          // Show welcome + logout
+          const username = user.email.split("@")[0];
+          welcomeMsg.textContent = `Welcome, ${username}`;
+          welcomeMsg.style.display = "inline";
+          logoutLink.style.display = "inline";
+          loginLink.style.display = "none";
+          registerLink.style.display = "none";
+        } else {
+          // Show login/register
+          welcomeMsg.style.display = "none";
+          logoutLink.style.display = "none";
+          loginLink.style.display = "inline";
+          registerLink.style.display = "inline";
+        }
+      });
 
       // Logout handler
       const logoutBtn = document.getElementById("logoutBtn");
       if (logoutBtn) {
-        logoutBtn.addEventListener("click", (e) => {
+        logoutBtn.addEventListener("click", async (e) => {
           e.preventDefault();
-          localStorage.removeItem("user");
-          window.location.href = "index.html";
+          await signOut(auth); // log out Firebase user
+          localStorage.removeItem("user"); // optional
+          location.reload(); // refresh to update navbar
         });
       }
     });

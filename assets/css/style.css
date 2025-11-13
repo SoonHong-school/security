@@ -41,6 +41,49 @@ a:hover {
   text-decoration: underline;
 }
 
+.input-container input {
+  width: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+
+.password-container {
+  position: relative;
+  margin-bottom: 15px;
+}
+
+.password-container input {
+  width: 100%;
+  padding-right: 35px; /* space for the icon */
+  box-sizing: border-box; /* ensure proper width */
+}
+
+/* Eye icon styling */
+.toggle-password {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 18px;
+  color: #555;
+  user-select: none;
+
+  /* Remove button styling influence */
+  background: transparent;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+.toggle-password:hover {
+  color: #000;
+}
+
+
+
 /* === Hero Section === */
 .hero {
   background: url("/assets/images/sportfacility.jpg") center/cover no-repeat;

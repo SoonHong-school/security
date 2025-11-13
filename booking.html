@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,6 +8,7 @@
   <link rel="stylesheet" href="assets/css/style.css" />
   <link rel="stylesheet" href="assets/css/navbar.css" />
 </head>
+
 <body>
   <!-- Navbar placeholder -->
   <div id="navbar"></div>
@@ -37,16 +39,12 @@
     <button id="bookBtn">Book Now</button>
   </div>
 
-  <!-- Load navbar dynamically -->
-  <script>
-    fetch("navbar.html")
-      .then(response => response.text())
-      .then(data => {
-        document.getElementById("navbar").innerHTML = data;
-      });
-  </script>
+  <!-- Load the navbar dynamically -->
+  <script type="module" src="assets/js/navbar.js"></script>
 
   <!-- Firebase booking logic -->
   <script type="module" src="assets/js/booking.js"></script>
+
 </body>
+
 </html>

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,28 +8,44 @@
   <link rel="stylesheet" href="assets/css/style.css" />
   <link rel="stylesheet" href="assets/css/navbar.css" />
 </head>
+
 <body>
   <!-- Navbar placeholder -->
   <div id="navbar"></div>
 
   <div class="container">
     <h2>Create Account</h2>
-    <input type="email" id="registerEmail" placeholder="Email" required />
-    <input type="password" id="registerPassword" placeholder="Password" required />
+
+    <div class="input-container">
+      <input type="email" id="registerEmail" placeholder="Email" required />
+    </div>
+
+
+    <div class="password-container">
+      <input type="password" id="registerPassword" placeholder="Password" required />
+      <span class="toggle-password" data-target="registerPassword">&#128065;</span>
+    </div>
+
+    <div class="password-container">
+      <input type="password" id="registerConfirm" placeholder="Confirm Password" required />
+      <span class="toggle-password" data-target="registerConfirm">&#128065;</span>
+    </div>
+
+
+    <p id="passwordRequirements">
+      Password must be at least 8 characters and include both letters and numbers.
+    </p>
+
     <button id="registerBtn">Register</button>
     <p>Already have an account? <a href="login.html">Login here</a></p>
   </div>
 
-  <!-- Load navbar dynamically -->
-  <script>
-    fetch("navbar.html")
-      .then(response => response.text())
-      .then(data => {
-        document.getElementById("navbar").innerHTML = data;
-      });
-  </script>
+
+  <!-- Load the navbar dynamically -->
+  <script type="module" src="assets/js/navbar.js"></script>
 
   <!-- Firebase auth logic -->
   <script type="module" src="assets/js/auth.js"></script>
 </body>
+
 </html>
