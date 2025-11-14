@@ -2,11 +2,22 @@
 <nav class="navbar">
   <div class="logo">🏀 SportBook</div>
   <ul class="nav-links" id="navLinks">
+    <!-- Always visible -->
     <li><a href="index.html">Home</a></li>
-    <li><a href="booking.html">Book Facility</a></li>
-    <li><a href="profile.html">Profile</a></li>
+
+    <!-- User-only links -->
+    <li class="user-link" style="display:none;"><a href="booking.html">Book Facility</a></li>
+    <li class="user-link" style="display:none;"><a href="profile.html">Profile</a></li>
+
+    <!-- Admin-only links -->
+    <li class="admin-link" style="display:none;"><a href="admin.html">Admin Dashboard</a></li>
+    <li class="admin-link" style="display:none;"><a href="manage-facilities.html">Manage Facilities</a></li>
+
+    <!-- Authentication links -->
     <li id="loginLink"><a href="login.html">Login</a></li>
     <li id="registerLink"><a href="register.html">Register</a></li>
+
+    <!-- Welcome & Logout -->
     <li id="welcomeMsg" style="display:none;"></li>
     <li id="logoutLink" style="display:none;"><a href="#" id="logoutBtn">Logout</a></li>
   </ul>

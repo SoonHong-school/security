@@ -16,36 +16,124 @@
   <div class="container">
     <h2>Create Account</h2>
 
+    <!-- Email input -->
     <div class="input-container">
       <input type="email" id="registerEmail" placeholder="Email" required />
     </div>
 
-
+    <!-- Password input -->
     <div class="password-container">
       <input type="password" id="registerPassword" placeholder="Password" required />
       <span class="toggle-password" data-target="registerPassword">&#128065;</span>
     </div>
 
+    <!-- Confirm password input -->
     <div class="password-container">
       <input type="password" id="registerConfirm" placeholder="Confirm Password" required />
       <span class="toggle-password" data-target="registerConfirm">&#128065;</span>
     </div>
 
-
+    <!-- Password requirements -->
     <p id="passwordRequirements">
-      Password must be at least 8 characters and include both letters and numbers.
+      Password must be at least 8 characters and include: <br>
+      • Uppercase letters <br>
+      • Lowercase letters <br>
+      • Numbers <br>
+      • Special characters (e.g., @ $ ! % * ? &amp; #)
     </p>
 
     <button id="registerBtn">Register</button>
+
+    <!-- Email verification notice -->
+    <p id="verificationNotice" style="display:none; color: green;">
+      Registration successful! A verification email has been sent. Please check your inbox to verify your email before logging in.
+    </p>
+
     <p>Already have an account? <a href="login.html">Login here</a></p>
   </div>
-
 
   <!-- Load the navbar dynamically -->
   <script type="module" src="assets/js/navbar.js"></script>
 
   <!-- Firebase auth logic -->
-  <script type="module" src="assets/js/auth.js"></script>
+  <script type="module">
+    import { auth, db } from "./assets/js/firebaseConfig.js";
+    import { createUserWithEmailAndPassword, sendEmailVerification } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    import { doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { logEvent, validateEmail, validatePassword, getFriendlyErrorMessage } from "./assets/js/auth.js";
+
+    const registerBtn = document.getElementById("registerBtn");
+    const verificationNotice = document.getElementById("verificationNotice");
+
+    if (registerBtn) {
+      registerBtn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        registerBtn.disabled = true; // Prevent double click
+
+        const email = document.getElementById("registerEmail").value.trim();
+        const password = document.getElementById("registerPassword").value;
+        const confirm = document.getElementById("registerConfirm").value;
+
+        // Validation
+        if (!validateEmail(email)) return alert("Please enter a valid email address.");
+        if (password !== confirm) return alert("Passwords do not match!");
+        if (!validatePassword(password)) return alert("Password must be 8+ chars with uppercase, lowercase, number, and symbol.");
+
+        try {
+          // 1️⃣ Check if user document already exists to avoid duplicate registration
+          const tempUserRef = doc(db, "users", email); // optional: use email or uid
+          const docSnap = await getDoc(tempUserRef);
+          if (docSnap.exists()) {
+            alert("This email is already registered in Firestore.");
+            registerBtn.disabled = false;
+            return;
+          }
+
+          // 2️⃣ Create user in Firebase Auth
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          const user = userCredential.user;
+
+          // 3️⃣ Send verification email
+          await sendEmailVerification(user);
+
+          // 4️⃣ Create Firestore user document
+          const userRef = doc(db, "users", user.uid);
+          await setDoc(userRef, {
+            email: user.email,
+            role: "user",
+            verified: false,
+            createdAt: serverTimestamp()
+          });
+
+          // 5️⃣ Log registration
+          await logEvent(user.uid, "register");
+
+          // 6️⃣ Show verification message
+          verificationNotice.style.display = "block";
+
+        } catch (error) {
+          console.error("Registration error:", error);
+          alert(getFriendlyErrorMessage(error.code));
+        } finally {
+          registerBtn.disabled = false;
+        }
+      });
+    }
+
+    // Toggle password visibility
+    document.querySelectorAll(".toggle-password").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const target = document.getElementById(btn.dataset.target);
+        if (target.type === "password") {
+          target.type = "text";
+          btn.textContent = "🙈";
+        } else {
+          target.type = "password";
+          btn.textContent = "👁️";
+        }
+      });
+    });
+  </script>
 </body>
 
 </html>

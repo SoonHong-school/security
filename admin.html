@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Booking | Sport Facility</title>
+  <title>Admin Dashboard | Sport Facility</title>
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/navbar.css">
 </head>
@@ -11,16 +11,16 @@
   <div id="navbar"></div>
 
   <div class="container">
-    <h2>Book a Sport Facility</h2>
+    <h2>Admin Dashboard</h2>
 
-    <!-- User-only content -->
-    <div id="userContent">
-      <p>Welcome! Here are available facilities:</p>
-      <div id="facilitiesList"></div>
-      <button id="bookBtn">Book Facility</button>
+    <!-- Admin-only content -->
+    <div id="adminContent">
+      <button id="addFacilityBtn">Add Facility</button>
+      <button id="viewLogsBtn">View Logs</button>
+      <div id="logsContainer"></div>
     </div>
 
-    <!-- Access denied fallback -->
+    <!-- Optional: fallback message -->
     <div id="accessDenied" style="display:none;">
       <p>Access denied: You do not have permission to view this page.</p>
     </div>
@@ -32,25 +32,26 @@
     import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
     import { requireRole } from "./auth.js";
 
-    // Enforce RBAC: only user can access
-    requireRole(["user"]).then(async user => {
-      console.log("User authorized:", user.email);
+    // Enforce RBAC: only admin can access
+    requireRole(["admin"]).then(async user => {
+      console.log("Admin authorized:", user.email);
 
-      // Load facilities from Firestore
-      const facilitiesSnap = await getDocs(collection(db, "facilities"));
-      const container = document.getElementById("facilitiesList");
-      facilitiesSnap.forEach(doc => {
+      // Load logs from Firestore
+      const logsSnap = await getDocs(collection(db, "logs"));
+      const container = document.getElementById("logsContainer");
+      logsSnap.forEach(doc => {
         const data = doc.data();
         const div = document.createElement("div");
-        div.textContent = `${data.name} - ${data.location}`;
+        const timestamp = data.timestamp?.toDate() || new Date();
+        div.textContent = `[${timestamp.toLocaleString()}] UID: ${data.uid} Action: ${data.action}`;
         container.appendChild(div);
       });
 
     }).catch(err => {
       console.error("Access denied or error:", err);
 
-      // Hide user content and show access denied
-      document.getElementById("userContent").style.display = "none";
+      // Hide admin content and show access denied
+      document.getElementById("adminContent").style.display = "none";
       document.getElementById("accessDenied").style.display = "block";
     });
   </script>
