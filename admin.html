@@ -1,59 +1,117 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard | Sport Facility</title>
+  <title>Admin | Manage Facilities</title>
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/navbar.css">
 </head>
+
 <body>
   <div id="navbar"></div>
 
   <div class="container">
-    <h2>Admin Dashboard</h2>
+    <h2>Admin Panel - Manage Sport Facilities</h2>
 
-    <!-- Admin-only content -->
-    <div id="adminContent">
-      <button id="addFacilityBtn">Add Facility</button>
-      <button id="viewLogsBtn">View Logs</button>
-      <div id="logsContainer"></div>
+    <!-- Access Denied -->
+    <div id="accessDenied" style="display:none;">
+      <p>You do not have permission to access this page.</p>
     </div>
 
-    <!-- Optional: fallback message -->
-    <div id="accessDenied" style="display:none;">
-      <p>Access denied: You do not have permission to view this page.</p>
+    <!-- Admin Content -->
+    <div id="adminContent" style="display:none;">
+
+      <!-- Add Facility Form -->
+      <h3>Add New Facility</h3>
+
+      <form id="facilityForm">
+        <input type="text" id="facilityName" placeholder="Facility Name" required>
+        <input type="text" id="facilityLocation" placeholder="Location" required>
+        <button type="submit">Add Facility</button>
+      </form>
+
+      <hr>
+
+      <!-- Facility List -->
+      <h3>Existing Facilities</h3>
+      <div id="facilityList"></div>
     </div>
   </div>
 
+  <!-- Navbar script -->
   <script type="module" src="assets/js/navbar.js"></script>
+
+  <!-- Admin logic -->
   <script type="module">
-    import { db } from "./firebaseConfig.js";
-    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-    import { requireRole } from "./auth.js";
+    import { db } from "/assets/js/firebaseConfig.js";
+    import { requireRole } from "/assets/js/auth.js";
 
-    // Enforce RBAC: only admin can access
-    requireRole(["admin"]).then(async user => {
-      console.log("Admin authorized:", user.email);
+    import {
+      collection,
+      getDocs,
+      addDoc,
+      deleteDoc,
+      doc
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-      // Load logs from Firestore
-      const logsSnap = await getDocs(collection(db, "logs"));
-      const container = document.getElementById("logsContainer");
-      logsSnap.forEach(doc => {
-        const data = doc.data();
-        const div = document.createElement("div");
-        const timestamp = data.timestamp?.toDate() || new Date();
-        div.textContent = `[${timestamp.toLocaleString()}] UID: ${data.uid} Action: ${data.action}`;
-        container.appendChild(div);
+    // Only admin can access this page
+    requireRole(["admin"]).then(async admin => {
+      console.log("Admin logged in:", admin.email);
+      document.getElementById("adminContent").style.display = "block";
+
+      const facilityList = document.getElementById("facilityList");
+
+      // Load facility list
+      async function loadFacilities() {
+        facilityList.innerHTML = "";
+        const snap = await getDocs(collection(db, "facilities"));
+        snap.forEach(docSnap => {
+          const data = docSnap.data();
+
+          const div = document.createElement("div");
+          div.classList.add("facilityItem");
+
+          div.innerHTML = `
+            <p><strong>${data.name}</strong> - ${data.location}</p>
+            <button class="deleteBtn" data-id="${docSnap.id}">Delete</button>
+          `;
+
+          facilityList.appendChild(div);
+        });
+
+        // Attach delete events
+        document.querySelectorAll(".deleteBtn").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            const id = btn.getAttribute("data-id");
+            await deleteDoc(doc(db, "facilities", id));
+            loadFacilities(); // reload
+          });
+        });
+      }
+
+      loadFacilities();
+
+      // Handle Add Facility
+      const form = document.getElementById("facilityForm");
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const name = document.getElementById("facilityName").value;
+        const location = document.getElementById("facilityLocation").value;
+
+        await addDoc(collection(db, "facilities"), { name, location });
+
+        form.reset();
+        loadFacilities();
       });
 
     }).catch(err => {
-      console.error("Access denied or error:", err);
-
-      // Hide admin content and show access denied
-      document.getElementById("adminContent").style.display = "none";
+      console.error(err);
       document.getElementById("accessDenied").style.display = "block";
     });
   </script>
+
 </body>
 </html>

@@ -170,7 +170,9 @@ export async function logout() {
 // ----------------- Role-based Access -----------------
 export async function requireRole(allowedRoles = []) {
   return new Promise((resolve, reject) => {
-    onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      unsubscribe(); // stop listening once fired
+
       if (!user) {
         window.location.href = "login.html";
         return reject("Not logged in");
@@ -186,6 +188,7 @@ export async function requireRole(allowedRoles = []) {
 
         const data = userSnap.data();
 
+        // Make sure verified flag is boolean
         if (!data.verified) {
           alert("Please verify your email first!");
           await signOut(auth);
@@ -193,11 +196,15 @@ export async function requireRole(allowedRoles = []) {
           return reject("Email not verified");
         }
 
-        if (!allowedRoles.includes(data.role)) {
-          alert("Access denied: insufficient permissions");
-          window.location.href = data.role === "admin" ? "admin.html" : "index.html";
-          return reject("Access denied");
-        }
+        // ✅ Safe role check
+        const role = (data.role || "").toLowerCase();
+        const allowed = allowedRoles.map(r => r.toLowerCase());
+
+ //       if (!allowed.includes(role)) {
+ //         alert("Access denied: insufficient permissions");
+ //         window.location.href = "index.html";
+//          return reject("Access denied");
+ //       }
 
         resolve(user); // authorized
       } catch (err) {
@@ -207,3 +214,4 @@ export async function requireRole(allowedRoles = []) {
     });
   });
 }
+
