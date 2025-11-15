@@ -40,7 +40,7 @@ export function getFriendlyErrorMessage(code) {
     case "auth/wrong-password":
       return "Incorrect email or password.";
     default:
-      return "An unexpected error occurred. Please try again.";
+      return "An unexpected error occurred. Please check the console for details.";
   }
 }
 
@@ -87,18 +87,26 @@ if (registerBtn) {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Send email verification
+      // 1️⃣ Create Firestore user document BEFORE email verification
+      try {
+        const userRef = doc(db, "users", user.uid);
+        await setDoc(userRef, {
+          email: user.email,
+          role: "user",
+          verified: false,
+          createdAt: serverTimestamp()
+        });
+        console.log("Firestore user document created:", user.uid);
+      } catch (firestoreError) {
+        console.error("Firestore user creation failed:", firestoreError);
+        alert("User was registered but failed to create Firestore document.");
+        return; // Stop — do not continue
+      }
+
+      // 2️⃣ THEN send verification email
       await sendEmailVerification(user);
 
-      // Create Firestore user document
-      const userRef = doc(db, "users", user.uid);
-      await setDoc(userRef, {
-        email: user.email,
-        role: "user",           // default role
-        verified: false,        // updated after verification
-        createdAt: serverTimestamp()
-      });
-
+      // 3️⃣ Log event
       await logEvent(user.uid, "register");
 
       alert("Registration successful! Please check your email to verify your account.");
@@ -132,7 +140,6 @@ if (loginBtn) {
         return;
       }
 
-      // Update Firestore verification
       const userRef = doc(db, "users", user.uid);
       await setDoc(userRef, { verified: true }, { merge: true });
 
@@ -156,26 +163,17 @@ onAuthStateChanged(auth, async (user) => {
   try {
     const path = window.location.pathname;
 
-    if (!user.emailVerified) {
-      alert("Please verify your email first!");
-      await signOut(auth);
-      sessionStorage.removeItem("user");
-      if (!path.endsWith("login.html")) window.location.href = "login.html";
-      return;
+    // Only update verification status if logged in
+    if (user.emailVerified) {
+      const userRef = doc(db, "users", user.uid);
+      await setDoc(userRef, { verified: true }, { merge: true });
     }
 
-    // Ensure Firestore 'verified' field is updated
-    const userRef = doc(db, "users", user.uid);
-    await setDoc(userRef, { verified: true }, { merge: true });
-
-    // Redirect away from login/register if already logged in
-    if ((path.endsWith("login.html") || path.endsWith("register.html")) && !justLoggedIn) {
-      window.location.href = "index.html";
-    }
   } catch (err) {
     console.error("Auth listener error:", err);
   }
 });
+
 
 window.addEventListener("load", () => { justLoggedIn = false; });
 

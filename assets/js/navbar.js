@@ -21,8 +21,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (user && user.emailVerified) {
           // Show welcome + logout
           const username = user.email.split("@")[0];
-          welcomeMsg.textContent = `Welcome, ${username}`;
-          welcomeMsg.style.display = "inline";
+          welcomeMsg.querySelector("span").textContent = `Welcome, ${username}`;
+          welcomeMsg.style.display = "list-item";
           logoutLink.style.display = "inline";
           loginLink.style.display = "none";
           registerLink.style.display = "none";
