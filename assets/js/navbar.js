@@ -1,4 +1,3 @@
-// navbar.js
 import { auth, db } from "./firebaseConfig.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
@@ -14,8 +13,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const registerLink = document.getElementById("registerLink");
       const welcomeMsg = document.getElementById("welcomeMsg");
       const logoutLink = document.getElementById("logoutLink");
-      const adminLinks = document.querySelectorAll(".admin-link"); // Add class="admin-link" in navbar.html for admin-only links
       const userLinks = document.querySelectorAll(".user-link");   // Add class="user-link" for user-only links
+
+      // Remove admin-specific links and logic
+      const adminLinks = []; // No admin-specific links for now, so we leave this empty
 
       onAuthStateChanged(auth, async (user) => {
         if (user && user.emailVerified) {
@@ -33,14 +34,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
           // Show/hide links based on role
           if (role === "admin") {
-            adminLinks.forEach(link => link.style.display = "inline");
-            userLinks.forEach(link => link.style.display = "none");
+            // Admin users don't see the navbar
+            window.location.href = "admin.html"; // Redirect admins to admin page
           } else if (role === "user") {
+            // User role: show user links
             userLinks.forEach(link => link.style.display = "inline");
-            adminLinks.forEach(link => link.style.display = "none");
           } else {
             // Unknown role, hide both
-            adminLinks.forEach(link => link.style.display = "none");
             userLinks.forEach(link => link.style.display = "none");
           }
 
@@ -50,7 +50,6 @@ document.addEventListener("DOMContentLoaded", () => {
           logoutLink.style.display = "none";
           loginLink.style.display = "inline";
           registerLink.style.display = "inline";
-          adminLinks.forEach(link => link.style.display = "none");
           userLinks.forEach(link => link.style.display = "none");
         }
       });

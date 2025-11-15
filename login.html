@@ -7,21 +7,28 @@
   <title>Login | Sport Facility Booking</title>
   <link rel="stylesheet" href="assets/css/style.css" />
   <link rel="stylesheet" href="assets/css/navbar.css" />
+  <style>
+    .toggle-password {
+      cursor: pointer;
+      font-size: 1.2rem;
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+  </style>
 </head>
 
 <body>
-  <!-- Navbar placeholder -->
   <div id="navbar"></div>
 
   <div class="container">
     <h2>Login</h2>
 
-    <!-- Email input -->
     <div class="input-container">
       <input type="email" id="loginEmail" placeholder="Email" required />
     </div>
 
-    <!-- Password input -->
     <div class="password-container">
       <input type="password" id="loginPassword" placeholder="Password" required />
       <span class="toggle-password" data-target="loginPassword">&#128065;</span>
@@ -29,7 +36,8 @@
 
     <button id="loginBtn">Login</button>
 
-    <!-- Email verification notice -->
+    <p id="loginError" style="color: red; display: none;"></p>
+
     <p id="verificationNotice" style="display:none; color: orange;">
       Your email is not verified yet. Please check your inbox and verify your email to login.
     </p>
@@ -37,63 +45,11 @@
     <p>Don’t have an account? <a href="register.html">Register here</a></p>
   </div>
 
-  <!-- Load the navbar dynamically -->
   <script type="module" src="assets/js/navbar.js"></script>
 
-  <!-- Firebase Auth logic -->
-  <script type="module">
-    import { auth, db } from "./assets/js/firebaseConfig.js";
-    import { signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-    import { doc, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-    import { getFriendlyErrorMessage } from "./assets/js/auth.js";
+  <!-- Import auth.js to handle login logic -->
+  <script type="module" src="assets/js/auth.js"></script>
 
-    const loginBtn = document.getElementById("loginBtn");
-    const verificationNotice = document.getElementById("verificationNotice");
-
-    // Password toggle
-    document.querySelectorAll(".toggle-password").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const target = document.getElementById(btn.dataset.target);
-        target.type = target.type === "password" ? "text" : "password";
-        btn.textContent = target.type === "password" ? "👁️" : "🙈";
-      });
-    });
-
-    if (loginBtn) {
-      loginBtn.addEventListener("click", async (e) => {
-        e.preventDefault();
-        const email = document.getElementById("loginEmail").value.trim();
-        const password = document.getElementById("loginPassword").value;
-
-        try {
-          const userCredential = await signInWithEmailAndPassword(auth, email, password);
-          const user = userCredential.user;
-
-          if (!user.emailVerified) {
-            verificationNotice.style.display = "block";
-            await signOut(auth);
-            return;
-          }
-
-          // Update Firestore verified field if not updated yet
-          const userRef = doc(db, "users", user.uid);
-          await setDoc(userRef, { verified: true }, { merge: true });
-
-          // Store session and redirect
-          sessionStorage.setItem("user", JSON.stringify({ email: user.email, uid: user.uid }));
-          window.location.href = "index.html";
-
-        } catch (error) {
-          alert(getFriendlyErrorMessage(error.code));
-        }
-      });
-    }
-
-    // Hide verification notice when email input changes
-    document.getElementById("loginEmail").addEventListener("input", () => {
-      verificationNotice.style.display = "none";
-    });
-  </script>
 </body>
 
 </html>

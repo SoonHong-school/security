@@ -127,9 +127,14 @@
       });
 
     }).catch(err => {
-      console.error(err);
-      document.getElementById("accessDenied").style.display = "block";
-    });
+  console.error(err);
+  document.getElementById("accessDenied").style.display = "block";
+  // Redirect non-admins after showing access denied
+  setTimeout(() => {
+    window.location.href = "index.html"; // Redirect to homepage or any other page
+  }, 2000); // Redirect after 2 seconds for a better UX
+  });
+
 
     // Logout function
     function logout() {

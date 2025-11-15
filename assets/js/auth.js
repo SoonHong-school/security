@@ -35,13 +35,16 @@ export function getFriendlyErrorMessage(code) {
       return "Password is too weak. Use 8+ chars with uppercase, lowercase, number, and symbol.";
     case "auth/user-not-found":
     case "auth/wrong-password":
-    case "auth/invalid-login-credentials":   
+    case "auth/invalid-login-credentials":
       return "Incorrect email or password.";
+    case "auth/network-request-failed":
+      return "Network error. Please check your internet connection.";
+    case "auth/too-many-requests":
+      return "Too many login attempts. Please try again later.";
     default:
       return "An unexpected error occurred. Please check the console for details.";
   }
 }
-
 
 // ----------------- Password Toggle -----------------
 document.querySelectorAll(".toggle-password").forEach(btn => {
@@ -131,7 +134,7 @@ if (registerBtn) {
       const userRef = doc(db, "users", user.uid);
       await setDoc(userRef, {
         email: user.email,
-        role: "user",
+        role: "user", // Default role
         verified: false,
         termsAccepted: true,
         createdAt: serverTimestamp()
@@ -140,7 +143,6 @@ if (registerBtn) {
       await sendEmailVerification(user);
       alert("Registration successful! Please check your email to verify your account.");
       window.location.href = "login.html";
-
     } catch (error) {
       console.error("Registration error:", error);
       alert(getFriendlyErrorMessage(error.code));
@@ -150,6 +152,9 @@ if (registerBtn) {
 
 // ----------------- Login -----------------
 const loginBtn = document.getElementById("loginBtn");
+let loginAttempts = 0;  // To track login attempts
+const loginErrorMessage = document.getElementById("loginError"); // Error message container
+
 if (loginBtn) {
   loginBtn.addEventListener("click", async () => {
     const emailField = document.getElementById("loginEmail");
@@ -159,30 +164,66 @@ if (loginBtn) {
     const email = emailField.value.trim();
     const password = passwordField.value;
 
-    if (!validateEmail(email)) return alert("Please enter a valid email address.");
+    // Reset error message before validating
+    loginErrorMessage.style.display = 'none'; // Hide the error message initially
+    loginErrorMessage.textContent = '';
+
+    if (!validateEmail(email)) {
+      loginErrorMessage.style.display = 'block';
+      loginErrorMessage.textContent = "Please enter a valid email address.";
+      return;
+    }
+
+    // Basic rate limiting (locking out after 5 attempts)
+    if (loginAttempts >= 5) {
+      loginErrorMessage.style.display = 'block';
+      loginErrorMessage.textContent = "Too many login attempts. Please try again later.";
+      return;
+    }
 
     try {
+      loginAttempts++; // Increment login attempt count
+
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
       if (!user.emailVerified) {
-        alert("Please verify your email before logging in.");
+        loginErrorMessage.style.display = 'block';
+        loginErrorMessage.textContent = "Please verify your email before logging in.";
         await signOut(auth);
         return;
       }
 
       const userRef = doc(db, "users", user.uid);
-      await setDoc(userRef, { verified: true }, { merge: true });
+      const userSnap = await getDoc(userRef);
+      const userData = userSnap.data();
+
+      if (!userData) {
+        loginErrorMessage.style.display = 'block';
+        loginErrorMessage.textContent = "User profile not found!";
+        await signOut(auth);
+        return;
+      }
+
+      // Check if the user is an admin
+      if (userData.role === "admin") {
+        // Admin detected, redirect to the admin dashboard
+        window.location.href = "admin.html";
+      } else {
+        // Regular user, redirect to the regular user page
+        window.location.href = "index.html";
+      }
 
       sessionStorage.setItem("user", JSON.stringify({ email: user.email, uid: user.uid }));
-      window.location.href = "index.html";
 
     } catch (error) {
       console.error("Login error:", error);
-      alert(getFriendlyErrorMessage(error.code));
+      loginErrorMessage.style.display = 'block';
+      loginErrorMessage.textContent = getFriendlyErrorMessage(error.code);
     }
   });
 }
+
 
 // ----------------- Auth State Listener -----------------
 if (!window.authListenerInitialized) {
@@ -199,7 +240,6 @@ if (!window.authListenerInitialized) {
     }
   });
 }
-
 
 // ----------------- Logout -----------------
 export async function logout() {
