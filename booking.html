@@ -65,11 +65,9 @@ const timeSlots = [
   "16:00-17:00"
 ];
 
-// Render time slots (booked ones disabled)
+// Render time slots with optional booked slots
 function renderTimeSlots(bookedSlots = []) {
   timeSlotSelect.innerHTML = '';
-
-  // Placeholder
   const placeholder = document.createElement('option');
   placeholder.value = '';
   placeholder.textContent = 'Select a time slot';
@@ -77,7 +75,6 @@ function renderTimeSlots(bookedSlots = []) {
   placeholder.selected = true;
   timeSlotSelect.appendChild(placeholder);
 
-  // Add all time slots
   timeSlots.forEach(slot => {
     const option = document.createElement('option');
     option.value = slot;
@@ -91,32 +88,31 @@ function renderTimeSlots(bookedSlots = []) {
   });
 }
 
-// Fetch booked slots and update dropdown
+// Fetch booked slots from public bookings collection
 async function updateTimeSlots() {
   const facilityId = facilitySelect.value;
   const date = dateInput.value;
 
-  // Show all slots first
-  renderTimeSlots();
-
-  if (!facilityId || !date) return;
+  if (!facilityId || !date) {
+    renderTimeSlots();
+    return;
+  }
 
   try {
     const q = query(
-      collection(db, "bookings"),
+      collection(db, "bookings"), // public bookings collection
       where("facilityId", "==", facilityId),
       where("date", "==", date)
     );
     const snap = await getDocs(q);
     const bookedSlots = snap.docs.map(doc => doc.data().timeSlot);
-
-    renderTimeSlots(bookedSlots); // gray out booked slots
+    renderTimeSlots(bookedSlots);
   } catch (err) {
     console.error("Error fetching booked slots:", err);
   }
 }
 
-// Wait for authorized user
+// Wait for user to be authorized
 requireRole(["user"]).then(async user => {
   console.log("User authorized:", user.email);
 
@@ -134,7 +130,7 @@ requireRole(["user"]).then(async user => {
     console.error("Error loading facilities:", err);
   }
 
-  // Minimum date (3 days ahead)
+  // Set minimum date
   const today = new Date();
   const minDate = new Date(today);
   minDate.setDate(today.getDate() + 3);
@@ -160,26 +156,27 @@ requireRole(["user"]).then(async user => {
 
     const [startTime, endTime] = timeSlot.split("-");
 
+    const bookingData = {
+      userId: user.uid,
+      userEmail: user.email,
+      facilityId,
+      date,
+      timeSlot,
+      startTime,
+      endTime,
+      notes,
+      createdAt: new Date()
+    };
+
     try {
-      // Add booking
-      await addDoc(collection(db, "bookings"), {
-        userId: user.uid,
-        userEmail: user.email,
-        facilityId,
-        date,
-        timeSlot,
-        startTime,
-        endTime,
-        notes,
-        createdAt: new Date()
-      });
+      // Save to user subcollection
+      await addDoc(collection(db, "users", user.uid, "bookings"), bookingData);
+      // Save to public bookings collection
+      await addDoc(collection(db, "bookings"), bookingData);
 
       alert("Booking confirmed!");
       form.reset();
-
-      // Refresh slots immediately so booked slot is gray for everyone
-      updateTimeSlots();
-
+      updateTimeSlots(); // refresh slots immediately
     } catch (err) {
       console.error("Error saving booking:", err);
       alert("There was an error saving your booking. Please try again.");
@@ -191,8 +188,6 @@ requireRole(["user"]).then(async user => {
   document.getElementById("userContent").style.display = "none";
   document.getElementById("accessDenied").style.display = "block";
 });
-
   </script>
 </body>
 </html>
-
