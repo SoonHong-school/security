@@ -13,14 +13,36 @@
   <div class="container">
     <h2>Book a Sport Facility</h2>
 
-    <!-- User-only content -->
     <div id="userContent">
-      <p>Welcome! Here are available facilities:</p>
-      <div id="facilitiesList"></div>
-      <button id="bookBtn">Book Facility</button>
+      <form id="bookingForm">
+        <label for="facility">Select Facility:</label>
+        <select id="facility" required>
+          <option value="" disabled selected>Select a facility</option>
+        </select>
+
+        <label for="date">Date:</label>
+        <input type="date" id="date" required>
+
+        <label for="timeSlot">Select Time Slot:</label>
+        <select id="timeSlot" required>
+          <option value="" disabled selected>Select a time slot</option>
+          <option value="09:00-10:00">09:00 - 10:00</option>
+          <option value="10:00-11:00">10:00 - 11:00</option>
+          <option value="11:00-12:00">11:00 - 12:00</option>
+          <option value="12:00-13:00">12:00 - 13:00</option>
+          <option value="13:00-14:00">13:00 - 14:00</option>
+          <option value="14:00-15:00">14:00 - 15:00</option>
+          <option value="15:00-16:00">15:00 - 16:00</option>
+          <option value="16:00-17:00">16:00 - 17:00</option>
+        </select>
+
+        <label for="notes">Description / Notes:</label>
+        <textarea id="notes" placeholder="Optional notes..."></textarea>
+
+        <button type="submit">Book Facility</button>
+      </form>
     </div>
 
-    <!-- Access denied fallback -->
     <div id="accessDenied" style="display:none;">
       <p>Access denied: You do not have permission to view this page.</p>
     </div>
@@ -28,30 +50,80 @@
 
   <script type="module" src="assets/js/navbar.js"></script>
   <script type="module">
-    import { db } from "./firebaseConfig.js";
-    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-    import { requireRole } from "./auth.js";
+    import { auth, db } from "/assets/js/firebaseConfig.js";
+    import { collection, getDocs, addDoc, query, where } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { requireRole } from "./assets/js/auth.js";
 
-    // Enforce RBAC: only user can access
+    const form = document.getElementById("bookingForm");
+    const facilitySelect = document.getElementById("facility");
+    const timeSlotSelect = document.getElementById("timeSlot");
+
+    // Ensure user is logged in and has role "user"
     requireRole(["user"]).then(async user => {
       console.log("User authorized:", user.email);
 
-      // Load facilities from Firestore
+      // Load facilities into dropdown
       const facilitiesSnap = await getDocs(collection(db, "facilities"));
-      const container = document.getElementById("facilitiesList");
       facilitiesSnap.forEach(doc => {
         const data = doc.data();
-        const div = document.createElement("div");
-        div.textContent = `${data.name} - ${data.location}`;
-        container.appendChild(div);
+        const option = document.createElement("option");
+        option.value = doc.id;
+        option.textContent = `${data.name} - ${data.location}`;
+        facilitySelect.appendChild(option);
       });
 
     }).catch(err => {
       console.error("Access denied or error:", err);
-
-      // Hide user content and show access denied
       document.getElementById("userContent").style.display = "none";
       document.getElementById("accessDenied").style.display = "block";
+    });
+
+    // Handle booking submission
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const user = auth.currentUser;
+      if (!user) return alert("Please log in first.");
+
+      const facilityId = facilitySelect.value;
+      const date = document.getElementById("date").value;
+      const timeSlot = timeSlotSelect.value;
+      const notes = document.getElementById("notes").value;
+
+      if (!facilityId || !date || !timeSlot) return alert("Please fill all required fields.");
+
+      const [startTime, endTime] = timeSlot.split("-");
+
+      // Check for overlapping bookings
+      const q = query(
+        collection(db, "bookings"),
+        where("facilityId", "==", facilityId),
+        where("date", "==", date)
+      );
+
+      const snap = await getDocs(q);
+      const overlap = snap.docs.some(doc => {
+        const b = doc.data();
+        return b.timeSlot === timeSlot;
+      });
+
+      if (overlap) return alert("This time slot is already booked for the selected facility.");
+
+      // Save booking
+      await addDoc(collection(db, "bookings"), {
+        userId: user.uid,
+        userEmail: user.email,
+        facilityId,
+        date,
+        timeSlot,
+        startTime,
+        endTime,
+        notes,
+        createdAt: new Date()
+      });
+
+      alert("Booking confirmed!");
+      form.reset();
     });
   </script>
 </body>

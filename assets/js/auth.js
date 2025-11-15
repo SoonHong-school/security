@@ -1,4 +1,4 @@
-import { auth, db } from "./firebaseConfig.js";
+import { auth, db } from "/assets/js/firebaseConfig.js";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -43,8 +43,10 @@ export function getFriendlyErrorMessage(code) {
 
 // ----------------- Password Toggle -----------------
 document.querySelectorAll(".toggle-password").forEach(btn => {
+  if (!btn) return;
   btn.addEventListener("click", () => {
     const target = document.getElementById(btn.dataset.target);
+    if (!target) return;
     if (target.type === "password") {
       target.type = "text";
       btn.textContent = "🙈";
@@ -59,98 +61,81 @@ document.querySelectorAll(".toggle-password").forEach(btn => {
 const registerBtn = document.getElementById("registerBtn");
 const agreeTermsCheckbox = document.getElementById("agreeTerms");
 
-// Enable/disable the register button based on checkbox state
-agreeTermsCheckbox.addEventListener("change", () => {
-  registerBtn.disabled = !agreeTermsCheckbox.checked;
-});
+if (registerBtn && agreeTermsCheckbox) {
+  agreeTermsCheckbox.addEventListener("change", () => {
+    registerBtn.disabled = !agreeTermsCheckbox.checked;
+  });
+}
 
 // ----------------- Reset Error States -----------------
 function resetErrors() {
   const errorMessages = document.querySelectorAll(".error-message");
-  errorMessages.forEach(message => {
-    message.style.display = "none";
-  });
+  errorMessages.forEach(message => message.style.display = "none");
 
   const errorFields = document.querySelectorAll(".error");
-  errorFields.forEach(field => {
-    field.classList.remove("error");
-  });
+  errorFields.forEach(field => field.classList.remove("error"));
 }
 
 // ----------------- Registration -----------------
 if (registerBtn) {
   registerBtn.addEventListener("click", async () => {
-    const email = document.getElementById("registerEmail").value.trim();
-    const password = document.getElementById("registerPassword").value;
-    const confirm = document.getElementById("registerConfirm").value;
+    const emailField = document.getElementById("registerEmail");
+    const passwordField = document.getElementById("registerPassword");
+    const confirmField = document.getElementById("registerConfirm");
 
-    // Reset errors before starting validation
+    if (!emailField || !passwordField || !confirmField || !agreeTermsCheckbox) return;
+
+    const email = emailField.value.trim();
+    const password = passwordField.value;
+    const confirm = confirmField.value;
+
     resetErrors();
 
-    // Validation checks
     let isValid = true;
 
-    // Email validation
     if (!validateEmail(email)) {
-      document.getElementById("registerEmail").classList.add("error");
-      document.getElementById("emailError").innerText = "Please enter a valid email address.";
-      document.getElementById("emailError").style.display = "block";
+      emailField.classList.add("error");
+      const el = document.getElementById("emailError");
+      if (el) { el.innerText = "Please enter a valid email address."; el.style.display = "block"; }
       isValid = false;
     }
 
-    // Password matching check
     if (password !== confirm) {
-      document.getElementById("registerConfirm").classList.add("error");
-      document.getElementById("confirmPasswordError").innerText = "Passwords do not match!";
-      document.getElementById("confirmPasswordError").style.display = "block";
+      confirmField.classList.add("error");
+      const el = document.getElementById("confirmPasswordError");
+      if (el) { el.innerText = "Passwords do not match!"; el.style.display = "block"; }
       isValid = false;
     }
 
-    // Password strength validation
     if (!validatePassword(password)) {
-      document.getElementById("registerPassword").classList.add("error");
-      document.getElementById("passwordError").innerText = "Password must be at least 8 characters with uppercase, lowercase, number, and symbol.";
-      document.getElementById("passwordError").style.display = "block";
+      passwordField.classList.add("error");
+      const el = document.getElementById("passwordError");
+      if (el) { el.innerText = "Password must be at least 8 characters with uppercase, lowercase, number, and symbol."; el.style.display = "block"; }
       isValid = false;
     }
 
-    // Terms and Conditions agreement check
     if (!agreeTermsCheckbox.checked) {
-      document.getElementById("termsError").innerText = "You must agree to the Terms and Conditions and Privacy Policy.";
-      document.getElementById("termsError").style.display = "block";
+      const el = document.getElementById("termsError");
+      if (el) { el.innerText = "You must agree to the Terms and Conditions and Privacy Policy."; el.style.display = "block"; }
       isValid = false;
     }
 
-    if (!isValid) {
-      return; // Prevent form submission if validation failed
-    }
+    if (!isValid) return;
 
     try {
-      // Create user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // 1️⃣ Create Firestore user document BEFORE email verification
-      try {
-        const userRef = doc(db, "users", user.uid);
-        await setDoc(userRef, {
-          email: user.email,
-          role: "user", // Default role
-          verified: false, // User is not verified yet
-          termsAccepted: true, // Track that the user agreed to the terms
-          createdAt: serverTimestamp() // Timestamp for user creation
-        });
-        console.log("Firestore user document created:", user.uid);
-      } catch (firestoreError) {
-        console.error("Firestore user creation failed:", firestoreError);
-        alert("User was registered but failed to create Firestore document.");
-        return; // Stop — do not continue
-      }
+      const userRef = doc(db, "users", user.uid);
+      await setDoc(userRef, {
+        email: user.email,
+        role: "user",
+        verified: false,
+        termsAccepted: true,
+        createdAt: serverTimestamp()
+      });
 
-      // 2️⃣ THEN send verification email
       await sendEmailVerification(user);
-
-      // Show success message and redirect
       alert("Registration successful! Please check your email to verify your account.");
       window.location.href = "login.html";
 
@@ -162,13 +147,15 @@ if (registerBtn) {
 }
 
 // ----------------- Login -----------------
-let justLoggedIn = false;
 const loginBtn = document.getElementById("loginBtn");
-
 if (loginBtn) {
   loginBtn.addEventListener("click", async () => {
-    const email = document.getElementById("loginEmail").value.trim();
-    const password = document.getElementById("loginPassword").value;
+    const emailField = document.getElementById("loginEmail");
+    const passwordField = document.getElementById("loginPassword");
+    if (!emailField || !passwordField) return;
+
+    const email = emailField.value.trim();
+    const password = passwordField.value;
 
     if (!validateEmail(email)) return alert("Please enter a valid email address.");
 
@@ -186,7 +173,6 @@ if (loginBtn) {
       await setDoc(userRef, { verified: true }, { merge: true });
 
       sessionStorage.setItem("user", JSON.stringify({ email: user.email, uid: user.uid }));
-      justLoggedIn = true;
       window.location.href = "index.html";
 
     } catch (error) {
@@ -199,22 +185,15 @@ if (loginBtn) {
 // ----------------- Auth State Listener -----------------
 onAuthStateChanged(auth, async (user) => {
   if (!user) return;
-
   try {
-    const path = window.location.pathname;
-
-    // Only update verification status if logged in
     if (user.emailVerified) {
       const userRef = doc(db, "users", user.uid);
       await setDoc(userRef, { verified: true }, { merge: true });
     }
-
   } catch (err) {
     console.error("Auth listener error:", err);
   }
 });
-
-window.addEventListener("load", () => { justLoggedIn = false; });
 
 // ----------------- Logout -----------------
 export async function logout() {
@@ -227,12 +206,8 @@ export async function logout() {
 export async function requireRole(allowedRoles = []) {
   return new Promise((resolve, reject) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      unsubscribe(); // stop listening once fired
-
-      if (!user) {
-        window.location.href = "login.html";
-        return reject("Not logged in");
-      }
+      unsubscribe();
+      if (!user) { window.location.href = "login.html"; return reject("Not logged in"); }
 
       try {
         const userSnap = await getDoc(doc(db, "users", user.uid));
@@ -243,8 +218,6 @@ export async function requireRole(allowedRoles = []) {
         }
 
         const data = userSnap.data();
-
-        // Make sure verified flag is boolean
         if (!data.verified) {
           alert("Please verify your email first!");
           await signOut(auth);
@@ -252,17 +225,14 @@ export async function requireRole(allowedRoles = []) {
           return reject("Email not verified");
         }
 
-        // ✅ Safe role check
         const role = (data.role || "").toLowerCase();
         const allowed = allowedRoles.map(r => r.toLowerCase());
 
- //       if (!allowed.includes(role)) {
- //         alert("Access denied: insufficient permissions");
- //         window.location.href = "index.html";
-//          return reject("Access denied");
- //       }
+        // Optional role check:
+        // if (!allowed.includes(role)) { alert("Access denied"); return reject("Access denied"); }
 
-        resolve(user); // authorized
+        resolve(user);
+
       } catch (err) {
         console.error("RBAC check failed:", err);
         reject(err);
@@ -270,4 +240,3 @@ export async function requireRole(allowedRoles = []) {
     });
   });
 }
-
