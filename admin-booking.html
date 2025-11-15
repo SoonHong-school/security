@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Admin – All Bookings</title>
+  <link rel="stylesheet" href="/assets/css/admin-booking.css">
+  <link rel="stylesheet" href="assets/css/navbar.css">
+</head>
+
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>Admin Dashboard</h2>
+    <a href="admin.html">Dashboard</a>
+    <a href="admin-booking.html">Manage Bookings</a>
+    <a href="#">Manage Users</a>
+    <a href="#">Settings</a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="admin-container">
+    <div class="header">
+      <h1>Admin Booking Management</h1>
+    </div>
+
+    <div id="bookingTableContainer" class="card">
+      <table border="1" cellspacing="0" cellpadding="10">
+        <thead>
+          <tr>
+            <th>User Email</th>
+            <th>Facility</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Notes</th>
+            <th>Created At</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="bookingTableBody">
+          <tr>
+            <td colspan="6">Loading…</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script type="module" src="/assets/js/admin-bookings.js"></script>
+  <script type="module" src="assets/js/navbar.js"></script>
+</body>
+
+</html>

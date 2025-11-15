@@ -35,11 +35,13 @@ export function getFriendlyErrorMessage(code) {
       return "Password is too weak. Use 8+ chars with uppercase, lowercase, number, and symbol.";
     case "auth/user-not-found":
     case "auth/wrong-password":
+    case "auth/invalid-login-credentials":   
       return "Incorrect email or password.";
     default:
       return "An unexpected error occurred. Please check the console for details.";
   }
 }
+
 
 // ----------------- Password Toggle -----------------
 document.querySelectorAll(".toggle-password").forEach(btn => {
@@ -183,17 +185,21 @@ if (loginBtn) {
 }
 
 // ----------------- Auth State Listener -----------------
-onAuthStateChanged(auth, async (user) => {
-  if (!user) return;
-  try {
-    if (user.emailVerified) {
-      const userRef = doc(db, "users", user.uid);
-      await setDoc(userRef, { verified: true }, { merge: true });
+if (!window.authListenerInitialized) {
+  window.authListenerInitialized = true;
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) return;
+    try {
+      if (user.emailVerified) {
+        const userRef = doc(db, "users", user.uid);
+        await setDoc(userRef, { verified: true }, { merge: true });
+      }
+    } catch (err) {
+      console.error("Auth listener error:", err);
     }
-  } catch (err) {
-    console.error("Auth listener error:", err);
-  }
-});
+  });
+}
+
 
 // ----------------- Logout -----------------
 export async function logout() {

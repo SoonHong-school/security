@@ -4,25 +4,142 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Bookings | Sport Facility Booking</title>
+  <title>My Profile | Sport Facility Booking</title>
   <link rel="stylesheet" href="assets/css/style.css" />
   <link rel="stylesheet" href="assets/css/navbar.css" />
+  <style>
+    .profile-container {
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background-color: #f9f9f9;
+    }
+
+    .profile-container h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .profile-container label {
+      font-weight: bold;
+      display: block;
+      margin-top: 15px;
+    }
+
+    .profile-container input,
+    .profile-container textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    .profile-container button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      border-radius: 5px;
+      background-color: #0077ff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    .profile-container button:hover {
+      background-color: #005ecc;
+    }
+  </style>
 </head>
 
 <body>
   <!-- Navbar placeholder -->
   <div id="navbar"></div>
-
-  <div class="container">
-    <h2>My Booking History</h2>
-    <div id="bookingList"></div>
-  </div>
-
-  <!-- Load the navbar dynamically -->
   <script type="module" src="assets/js/navbar.js"></script>
 
-  <!-- Firebase profile logic -->
-  <script type="module" src="assets/js/profile.js"></script>
+  <!-- Profile container -->
+  <div class="profile-container" id="profileContainer">
+    <h2>My Profile</h2>
+
+    <label for="name">Name</label>
+    <input type="text" id="name" placeholder="Your name" />
+
+    <label for="email">Email</label>
+    <input type="email" id="email" disabled />
+
+    <label for="phone">Phone</label>
+    <input type="text" id="phone" placeholder="Phone number" />
+
+    <label for="role">Role</label>
+    <input type="text" id="role" disabled />
+
+    <label for="bio">Bio</label>
+    <textarea id="bio" rows="4" placeholder="Tell us about yourself..."></textarea>
+
+ <!-- Password section -->
+
+<button type="button" id="editPasswordBtn" onclick="window.location.href='changePassword.html'">Edit Password</button>
+
+
+    <button id="saveBtn">Save Changes</button>
+  </div>
+
+  <script type="module">
+    import { auth, db } from '/assets/js/firebaseConfig.js';
+    import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+    const nameInput = document.getElementById("name");
+    const emailInput = document.getElementById("email");
+    const phoneInput = document.getElementById("phone");
+    const roleInput = document.getElementById("role");
+    const bioInput = document.getElementById("bio");
+    const saveBtn = document.getElementById("saveBtn");
+
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        alert("Please log in first.");
+        window.location.href = "/login.html"; // redirect to login
+        return;
+      }
+
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists()) {
+        const data = userSnap.data();
+        nameInput.value = data.name || "";
+        emailInput.value = data.email || user.email;
+        phoneInput.value = data.phone || "";
+        roleInput.value = data.role || "user";
+        bioInput.value = data.bio || "";
+      }
+    });
+
+    saveBtn.addEventListener("click", async () => {
+      const user = auth.currentUser;
+      if (!user) return alert("User not logged in.");
+
+      const userRef = doc(db, "users", user.uid);
+
+      try {
+        // Update profile fields in Firestore
+        await updateDoc(userRef, {
+          name: nameInput.value,
+          phone: phoneInput.value,
+          bio: bioInput.value
+        });
+
+      
+
+        alert("Profile updated successfully!");
+       
+      } catch (err) {
+        console.error(err);
+        alert("Error updating profile: " + err.message);
+      }
+    });
+  </script>
 </body>
 
 </html>

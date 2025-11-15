@@ -119,6 +119,7 @@ requireRole(["user"])
         startTime,
         endTime,
         notes,
+        status: "pending",  
         createdAt: new Date()
       };
 
