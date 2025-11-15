@@ -22,18 +22,13 @@
 
         <label for="date">Date:</label>
         <input type="date" id="date" required>
+        <p style="color: red; font-size: 0.9em; margin-top: 2px;">
+          Booking must be made at least 3 days in advance.
+        </p>
 
         <label for="timeSlot">Select Time Slot:</label>
         <select id="timeSlot" required>
           <option value="" disabled selected>Select a time slot</option>
-          <option value="09:00-10:00">09:00 - 10:00</option>
-          <option value="10:00-11:00">10:00 - 11:00</option>
-          <option value="11:00-12:00">11:00 - 12:00</option>
-          <option value="12:00-13:00">12:00 - 13:00</option>
-          <option value="13:00-14:00">13:00 - 14:00</option>
-          <option value="14:00-15:00">14:00 - 15:00</option>
-          <option value="15:00-16:00">15:00 - 16:00</option>
-          <option value="16:00-17:00">16:00 - 17:00</option>
         </select>
 
         <label for="notes">Description / Notes:</label>
@@ -50,66 +45,123 @@
 
   <script type="module" src="assets/js/navbar.js"></script>
   <script type="module">
-    import { auth, db } from "/assets/js/firebaseConfig.js";
-    import { collection, getDocs, addDoc, query, where } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-    import { requireRole } from "./assets/js/auth.js";
+import { auth, db } from "/assets/js/firebaseConfig.js";
+import { collection, getDocs, addDoc, query, where } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { requireRole } from "./assets/js/auth.js";
 
-    const form = document.getElementById("bookingForm");
-    const facilitySelect = document.getElementById("facility");
-    const timeSlotSelect = document.getElementById("timeSlot");
+const form = document.getElementById("bookingForm");
+const facilitySelect = document.getElementById("facility");
+const dateInput = document.getElementById("date");
+const timeSlotSelect = document.getElementById("timeSlot");
 
-    // Ensure user is logged in and has role "user"
-    requireRole(["user"]).then(async user => {
-      console.log("User authorized:", user.email);
+const timeSlots = [
+  "09:00-10:00",
+  "10:00-11:00",
+  "11:00-12:00",
+  "12:00-13:00",
+  "13:00-14:00",
+  "14:00-15:00",
+  "15:00-16:00",
+  "16:00-17:00"
+];
 
-      // Load facilities into dropdown
-      const facilitiesSnap = await getDocs(collection(db, "facilities"));
-      facilitiesSnap.forEach(doc => {
-        const data = doc.data();
-        const option = document.createElement("option");
-        option.value = doc.id;
-        option.textContent = `${data.name} - ${data.location}`;
-        facilitySelect.appendChild(option);
-      });
+// Render time slots (booked ones disabled)
+function renderTimeSlots(bookedSlots = []) {
+  timeSlotSelect.innerHTML = '';
 
-    }).catch(err => {
-      console.error("Access denied or error:", err);
-      document.getElementById("userContent").style.display = "none";
-      document.getElementById("accessDenied").style.display = "block";
+  // Placeholder
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = 'Select a time slot';
+  placeholder.disabled = true;
+  placeholder.selected = true;
+  timeSlotSelect.appendChild(placeholder);
+
+  // Add all time slots
+  timeSlots.forEach(slot => {
+    const option = document.createElement('option');
+    option.value = slot;
+    option.textContent = slot.replace("-", " - ");
+    if (bookedSlots.includes(slot)) {
+      option.disabled = true;
+      option.style.color = "#777";
+      option.style.background = "#eee";
+    }
+    timeSlotSelect.appendChild(option);
+  });
+}
+
+// Fetch booked slots and update dropdown
+async function updateTimeSlots() {
+  const facilityId = facilitySelect.value;
+  const date = dateInput.value;
+
+  // Show all slots first
+  renderTimeSlots();
+
+  if (!facilityId || !date) return;
+
+  try {
+    const q = query(
+      collection(db, "bookings"),
+      where("facilityId", "==", facilityId),
+      where("date", "==", date)
+    );
+    const snap = await getDocs(q);
+    const bookedSlots = snap.docs.map(doc => doc.data().timeSlot);
+
+    renderTimeSlots(bookedSlots); // gray out booked slots
+  } catch (err) {
+    console.error("Error fetching booked slots:", err);
+  }
+}
+
+// Wait for authorized user
+requireRole(["user"]).then(async user => {
+  console.log("User authorized:", user.email);
+
+  // Load facilities
+  try {
+    const facilitiesSnap = await getDocs(collection(db, "facilities"));
+    facilitiesSnap.forEach(doc => {
+      const data = doc.data();
+      const option = document.createElement("option");
+      option.value = doc.id;
+      option.textContent = `${data.name} - ${data.location}`;
+      facilitySelect.appendChild(option);
     });
+  } catch (err) {
+    console.error("Error loading facilities:", err);
+  }
 
-    // Handle booking submission
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
+  // Minimum date (3 days ahead)
+  const today = new Date();
+  const minDate = new Date(today);
+  minDate.setDate(today.getDate() + 3);
+  dateInput.min = minDate.toISOString().split('T')[0];
 
-      const user = auth.currentUser;
-      if (!user) return alert("Please log in first.");
+  // Event listeners
+  facilitySelect.addEventListener("change", updateTimeSlots);
+  dateInput.addEventListener("change", updateTimeSlots);
 
-      const facilityId = facilitySelect.value;
-      const date = document.getElementById("date").value;
-      const timeSlot = timeSlotSelect.value;
-      const notes = document.getElementById("notes").value;
+  // Initial render
+  renderTimeSlots();
 
-      if (!facilityId || !date || !timeSlot) return alert("Please fill all required fields.");
+  // Handle booking submission
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-      const [startTime, endTime] = timeSlot.split("-");
+    const facilityId = facilitySelect.value;
+    const date = dateInput.value;
+    const timeSlot = timeSlotSelect.value;
+    const notes = document.getElementById("notes").value;
 
-      // Check for overlapping bookings
-      const q = query(
-        collection(db, "bookings"),
-        where("facilityId", "==", facilityId),
-        where("date", "==", date)
-      );
+    if (!facilityId || !date || !timeSlot) return alert("Please fill all required fields.");
 
-      const snap = await getDocs(q);
-      const overlap = snap.docs.some(doc => {
-        const b = doc.data();
-        return b.timeSlot === timeSlot;
-      });
+    const [startTime, endTime] = timeSlot.split("-");
 
-      if (overlap) return alert("This time slot is already booked for the selected facility.");
-
-      // Save booking
+    try {
+      // Add booking
       await addDoc(collection(db, "bookings"), {
         userId: user.uid,
         userEmail: user.email,
@@ -124,7 +176,23 @@
 
       alert("Booking confirmed!");
       form.reset();
-    });
+
+      // Refresh slots immediately so booked slot is gray for everyone
+      updateTimeSlots();
+
+    } catch (err) {
+      console.error("Error saving booking:", err);
+      alert("There was an error saving your booking. Please try again.");
+    }
+  });
+
+}).catch(err => {
+  console.error("Access denied or error:", err);
+  document.getElementById("userContent").style.display = "none";
+  document.getElementById("accessDenied").style.display = "block";
+});
+
   </script>
 </body>
 </html>
+
