@@ -7,6 +7,51 @@
   <title>Register | Sport Facility Booking</title>
   <link rel="stylesheet" href="assets/css/style.css" />
   <link rel="stylesheet" href="assets/css/navbar.css" />
+  <style>
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.4);
+      padding-top: 60px;
+    }
+
+    .modal-content {
+      background-color: #fff;
+      margin: 5% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 600px;
+      border-radius: 10px;
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+      color: black;
+      cursor: pointer;
+    }
+
+    /* Add some basic styling to the text inside the modal */
+    .modal-text {
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+  </style>
 </head>
 
 <body>
@@ -20,29 +65,34 @@
     <!-- Email input -->
     <div class="input-container">
       <input type="email" id="registerEmail" placeholder="Email" required />
+      <div id="emailError" class="error-message" style="display: none;"></div> <!-- Error message -->
     </div>
 
     <!-- Password input -->
     <div class="password-container">
       <input type="password" id="registerPassword" placeholder="Password" required />
+      <div id="passwordError" class="error-message" style="display: none;"></div> <!-- Error message -->
       <span class="toggle-password" data-target="registerPassword">👁️</span>
     </div>
 
     <!-- Confirm password input -->
     <div class="password-container">
       <input type="password" id="registerConfirm" placeholder="Confirm Password" required />
+      <div id="confirmPasswordError" class="error-message" style="display: none;"></div> <!-- Error message -->
       <span class="toggle-password" data-target="registerConfirm">👁️</span>
     </div>
 
-    <!-- Password requirements -->
-    <p id="passwordRequirements">
-      Password must be at least 8 characters and include: <br>
-      • Uppercase letters <br>
-      • Lowercase letters <br>
-      • Numbers <br>
-      • Special characters (e.g., @ $ ! % * ? &amp; #)
-    </p>
+    <!-- Terms and Conditions Checkbox -->
+    <div class="terms-container">
+      <label>
+        <input type="checkbox" id="agreeTerms" /> I agree to the
+        <a href="javascript:void(0);" id="termsButton">Terms and Conditions</a> and
+        <a href="javascript:void(0);" id="privacyButton">Privacy Policy</a>.
+      </label>
+      <div id="termsError" class="error-message" style="display: none;">You must agree to the Terms and Conditions and Privacy Policy.</div>
+    </div>
 
+    <!-- Register Button -->
     <button id="registerBtn">Register</button>
 
     <!-- Email verification notice -->
@@ -53,11 +103,122 @@
     <p>Already have an account? <a href="login.html">Login here</a></p>
   </div>
 
+  <!-- Terms Modal -->
+  <div id="termsModal" class="modal">
+    <div class="modal-content">
+      <span id="closeTerms" class="close">&times;</span>
+      <h2>Terms & Conditions</h2>
+      <p>Last updated: November 15, 2025</p>
+      <div class="modal-text">
+        <h3>1. Introduction</h3>
+        <p>Welcome to our platform. By using our service, you agree to the following terms and conditions...</p>
+
+        <h3>2. User Responsibilities</h3>
+        <p>You agree to use our service responsibly and not engage in any illegal activity or violate any laws...</p>
+
+        <h3>3. Privacy Policy</h3>
+        <p>Your privacy is important to us. Please refer to our Privacy Policy to understand how we collect and use your personal data...</p>
+
+        <h3>4. Termination</h3>
+        <p>We reserve the right to terminate your access to the service if you violate any of these terms...</p>
+
+        <h3>5. Limitation of Liability</h3>
+        <p>Our liability is limited to the maximum extent permitted by law. We will not be responsible for any indirect or consequential damages...</p>
+
+        <h3>6. Changes to Terms</h3>
+        <p>We may modify these terms at any time. You will be notified of significant changes, and your continued use of the service constitutes acceptance of these modifications.</p>
+
+        <h3>7. Governing Law</h3>
+        <p>These terms are governed by the laws of the jurisdiction in which we operate.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Privacy Policy Modal -->
+  <div id="privacyModal" class="modal">
+    <div class="modal-content">
+      <span id="closePrivacy" class="close">&times;</span>
+      <h2>Privacy Policy</h2>
+      <p>Last updated: October 15, 2025</p>
+      <div class="modal-text">
+        <h3>1. Introduction</h3>
+        <p>We respect your privacy and are committed to protecting your personal information. This Privacy Policy explains how we collect, use, and protect your data...</p>
+
+        <h3>2. Information We Collect</h3>
+        <p>We collect personal information such as your name, email address, and usage data to provide and improve our services. This data may include usage logs, device information, and cookies...</p>
+
+        <h3>3. How We Use Your Data</h3>
+        <p>Your personal information is used to provide our services, communicate with you, improve our platform, and comply with legal obligations...</p>
+
+        <h3>4. Data Security</h3>
+        <p>We implement industry-standard security measures to protect your data from unauthorized access, alteration, or disclosure...</p>
+
+        <h3>5. Your Rights</h3>
+        <p>You have the right to access, correct, or delete your personal data. You can also withdraw consent for data processing at any time...</p>
+
+        <h3>6. Sharing Data</h3>
+        <p>We do not sell your personal information to third parties. We may share your data with trusted partners who assist us in providing services...</p>
+
+        <h3>7. Data Retention</h3>
+        <p>We will retain your data only for as long as necessary to fulfill the purposes outlined in this Privacy Policy, unless otherwise required by law...</p>
+
+        <h3>8. Changes to Privacy Policy</h3>
+        <p>We may update this Privacy Policy from time to time. We will notify you of any significant changes, and your continued use of the services constitutes acceptance of those changes.</p>
+
+        <h3>9. Contact Us</h3>
+        <p>If you have any questions about this Privacy Policy, please contact us at [your contact email].</p>
+      </div>
+    </div>
+  </div>
+
   <!-- Load Navbar -->
   <script type="module" src="assets/js/navbar.js"></script>
 
   <!-- Load Auth script (handles registration + Firestore creation) -->
   <script type="module" src="assets/js/auth.js"></script>
 
+  <script>
+    // Modal Handling JavaScript
+    const termsModal = document.getElementById("termsModal");
+    const privacyModal = document.getElementById("privacyModal");
+
+    const termsButton = document.getElementById("termsButton");
+    const privacyButton = document.getElementById("privacyButton");
+
+    const closeTerms = document.getElementById("closeTerms");
+    const closePrivacy = document.getElementById("closePrivacy");
+
+    // Open the Terms modal
+    termsButton.onclick = function () {
+      termsModal.style.display = "block";
+    }
+
+    // Open the Privacy Policy modal
+    privacyButton.onclick = function () {
+      privacyModal.style.display = "block";
+    }
+
+    // Close the Terms modal
+    closeTerms.onclick = function () {
+      termsModal.style.display = "none";
+    }
+
+    // Close the Privacy Policy modal
+    closePrivacy.onclick = function () {
+      privacyModal.style.display = "none";
+    }
+
+    // Close the modals if the user clicks outside the modal content
+    window.onclick = function (event) {
+      if (event.target == termsModal) {
+        termsModal.style.display = "none";
+      }
+      if (event.target == privacyModal) {
+        privacyModal.style.display = "none";
+      }
+    }
+  </script>
+
 </body>
+
 </html>

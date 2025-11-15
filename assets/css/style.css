@@ -187,3 +187,15 @@ footer {
   margin-top: 2rem;
 }
 
+
+.error {
+  border: 2px solid red; /* Red border to highlight the error */
+}
+
+.error-message {
+  color: red;
+  font-size: 0.875rem;
+  margin-top: 5px;
+}
+
+
