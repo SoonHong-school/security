@@ -1,4 +1,3 @@
-// auth.js
 import { auth, db } from "./firebaseConfig.js";
 import {
   createUserWithEmailAndPassword,
@@ -12,8 +11,6 @@ import {
   doc,
   setDoc,
   getDoc,
-  addDoc,
-  collection,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
@@ -33,9 +30,9 @@ export function getFriendlyErrorMessage(code) {
     case "auth/email-already-in-use":
       return "This email is already registered.";
     case "auth/invalid-email":
-      return "Invalid email address.";
+      return "Invalid email address. Please enter a valid email.";
     case "auth/weak-password":
-      return "Password is too weak. Use 8+ chars with letters, numbers, and symbols.";
+      return "Password is too weak. Use 8+ chars with uppercase, lowercase, number, and symbol.";
     case "auth/user-not-found":
     case "auth/wrong-password":
       return "Incorrect email or password.";
@@ -58,17 +55,75 @@ document.querySelectorAll(".toggle-password").forEach(btn => {
   });
 });
 
-// ----------------- Registration -----------------
+// ----------------- Enable Register Button Only if Terms Accepted -----------------
 const registerBtn = document.getElementById("registerBtn");
+const agreeTermsCheckbox = document.getElementById("agreeTerms");
+
+// Enable/disable the register button based on checkbox state
+agreeTermsCheckbox.addEventListener("change", () => {
+  registerBtn.disabled = !agreeTermsCheckbox.checked;
+});
+
+// ----------------- Reset Error States -----------------
+function resetErrors() {
+  const errorMessages = document.querySelectorAll(".error-message");
+  errorMessages.forEach(message => {
+    message.style.display = "none";
+  });
+
+  const errorFields = document.querySelectorAll(".error");
+  errorFields.forEach(field => {
+    field.classList.remove("error");
+  });
+}
+
+// ----------------- Registration -----------------
 if (registerBtn) {
   registerBtn.addEventListener("click", async () => {
     const email = document.getElementById("registerEmail").value.trim();
     const password = document.getElementById("registerPassword").value;
     const confirm = document.getElementById("registerConfirm").value;
 
-    if (!validateEmail(email)) return alert("Please enter a valid email address.");
-    if (password !== confirm) return alert("Passwords do not match!");
-    if (!validatePassword(password)) return alert("Password must be 8+ chars with uppercase, lowercase, number, and symbol.");
+    // Reset errors before starting validation
+    resetErrors();
+
+    // Validation checks
+    let isValid = true;
+
+    // Email validation
+    if (!validateEmail(email)) {
+      document.getElementById("registerEmail").classList.add("error");
+      document.getElementById("emailError").innerText = "Please enter a valid email address.";
+      document.getElementById("emailError").style.display = "block";
+      isValid = false;
+    }
+
+    // Password matching check
+    if (password !== confirm) {
+      document.getElementById("registerConfirm").classList.add("error");
+      document.getElementById("confirmPasswordError").innerText = "Passwords do not match!";
+      document.getElementById("confirmPasswordError").style.display = "block";
+      isValid = false;
+    }
+
+    // Password strength validation
+    if (!validatePassword(password)) {
+      document.getElementById("registerPassword").classList.add("error");
+      document.getElementById("passwordError").innerText = "Password must be at least 8 characters with uppercase, lowercase, number, and symbol.";
+      document.getElementById("passwordError").style.display = "block";
+      isValid = false;
+    }
+
+    // Terms and Conditions agreement check
+    if (!agreeTermsCheckbox.checked) {
+      document.getElementById("termsError").innerText = "You must agree to the Terms and Conditions and Privacy Policy.";
+      document.getElementById("termsError").style.display = "block";
+      isValid = false;
+    }
+
+    if (!isValid) {
+      return; // Prevent form submission if validation failed
+    }
 
     try {
       // Create user in Firebase Auth
@@ -80,9 +135,10 @@ if (registerBtn) {
         const userRef = doc(db, "users", user.uid);
         await setDoc(userRef, {
           email: user.email,
-          role: "user",
-          verified: false,
-          createdAt: serverTimestamp()
+          role: "user", // Default role
+          verified: false, // User is not verified yet
+          termsAccepted: true, // Track that the user agreed to the terms
+          createdAt: serverTimestamp() // Timestamp for user creation
         });
         console.log("Firestore user document created:", user.uid);
       } catch (firestoreError) {
@@ -94,6 +150,7 @@ if (registerBtn) {
       // 2️⃣ THEN send verification email
       await sendEmailVerification(user);
 
+      // Show success message and redirect
       alert("Registration successful! Please check your email to verify your account.");
       window.location.href = "login.html";
 
@@ -156,7 +213,6 @@ onAuthStateChanged(auth, async (user) => {
     console.error("Auth listener error:", err);
   }
 });
-
 
 window.addEventListener("load", () => { justLoggedIn = false; });
 
