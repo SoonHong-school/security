@@ -44,18 +44,6 @@ export function getFriendlyErrorMessage(code) {
   }
 }
 
-export async function logEvent(uid, action) {
-  try {
-    await addDoc(collection(db, "logs"), {
-      uid,
-      action,
-      timestamp: serverTimestamp()
-    });
-  } catch (err) {
-    console.error("Failed to log event:", err);
-  }
-}
-
 // ----------------- Password Toggle -----------------
 document.querySelectorAll(".toggle-password").forEach(btn => {
   btn.addEventListener("click", () => {
@@ -106,9 +94,6 @@ if (registerBtn) {
       // 2️⃣ THEN send verification email
       await sendEmailVerification(user);
 
-      // 3️⃣ Log event
-      await logEvent(user.uid, "register");
-
       alert("Registration successful! Please check your email to verify your account.");
       window.location.href = "login.html";
 
@@ -142,8 +127,6 @@ if (loginBtn) {
 
       const userRef = doc(db, "users", user.uid);
       await setDoc(userRef, { verified: true }, { merge: true });
-
-      await logEvent(user.uid, "login");
 
       sessionStorage.setItem("user", JSON.stringify({ email: user.email, uid: user.uid }));
       justLoggedIn = true;

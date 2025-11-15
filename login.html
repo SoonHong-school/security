@@ -45,7 +45,6 @@
     import { auth, db } from "./assets/js/firebaseConfig.js";
     import { signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
     import { doc, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-    import { logEvent, getFriendlyErrorMessage } from "./assets/js/auth.js";
 
     const loginBtn = document.getElementById("loginBtn");
     const verificationNotice = document.getElementById("verificationNotice");
@@ -78,9 +77,6 @@
           // Update Firestore verified field if not updated yet
           const userRef = doc(db, "users", user.uid);
           await setDoc(userRef, { verified: true }, { merge: true });
-
-          // Log login
-          await logEvent(user.uid, "login");
 
           // Store session and redirect
           sessionStorage.setItem("user", JSON.stringify({ email: user.email, uid: user.uid }));
