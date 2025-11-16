@@ -135,6 +135,7 @@ if (registerBtn) {
       await setDoc(userRef, {
         email: user.email,
         role: "user", // Default role
+        banned: false,
         verified: false,
         termsAccepted: true,
         createdAt: serverTimestamp()
