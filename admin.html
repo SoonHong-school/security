@@ -105,7 +105,7 @@
           btn.addEventListener("click", async () => {
             const id = btn.getAttribute("data-id");
             await deleteDoc(doc(db, "facilities", id));
-            loadFacilities(); // reload
+            loadFacilities(); 
           });
         });
       }
@@ -131,8 +131,8 @@
   document.getElementById("accessDenied").style.display = "block";
   // Redirect non-admins after showing access denied
   setTimeout(() => {
-    window.location.href = "index.html"; // Redirect to homepage or any other page
-  }, 2000); // Redirect after 2 seconds for a better UX
+    window.location.href = "index.html"; 
+  }, 2000); 
   });
 
 
@@ -141,7 +141,7 @@
       signOut(auth)
         .then(() => {
           // Redirect to the login page after signing out
-          window.location.href = "login.html"; // Adjust the path if necessary
+          window.location.href = "login.html"; 
         })
         .catch((error) => {
           console.error("Error signing out: ", error);

@@ -74,8 +74,7 @@ function attachEvents() {
     document.querySelectorAll(".banBtn").forEach(btn => {
         btn.addEventListener("click", async (e) => {
             const userId = e.target.dataset.id;
-            const currentStatus = btn.textContent === "Unban"; // if true, user is banned
-
+            const currentStatus = btn.textContent === "Unban"; 
             const confirmMsg = currentStatus
                 ? "Are you sure you want to unban this user?"
                 : "Are you sure you want to ban this user? They will not be able to make new bookings.";
