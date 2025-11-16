@@ -3,7 +3,6 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Load navbar HTML
   fetch("navbar.html")
     .then(res => res.text())
     .then(html => {
@@ -13,14 +12,35 @@ document.addEventListener("DOMContentLoaded", () => {
       const registerLink = document.getElementById("registerLink");
       const welcomeMsg = document.getElementById("welcomeMsg");
       const logoutLink = document.getElementById("logoutLink");
-      const userLinks = document.querySelectorAll(".user-link");   // Add class="user-link" for user-only links
+      const logoutBtn = document.getElementById("logoutBtn");
+      const userLinks = document.querySelectorAll(".user-link");
 
-      // Remove admin-specific links and logic
-      const adminLinks = []; // No admin-specific links for now, so we leave this empty
+      let inactivityTimer;
 
+      // Reset timer function
+      function resetInactivityTimer() {
+        clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(async () => {
+          try {
+            await signOut(auth);
+            sessionStorage.removeItem("user");
+            window.location.href = "login.html";
+          } catch (err) {
+            console.error("Auto logout failed:", err);
+          }
+        }, 5 * 60 * 1000); // 10 seconds for testing
+      }
+
+      // Attach activity listeners
+      function attachActivityListeners() {
+        ['mousemove', 'keypress', 'click', 'scroll'].forEach(event => {
+          document.addEventListener(event, resetInactivityTimer);
+        });
+      }
+
+      // Firebase auth observer
       onAuthStateChanged(auth, async (user) => {
         if (user && user.emailVerified) {
-          // Show welcome + logout
           const username = user.email.split("@")[0];
           welcomeMsg.querySelector("span").textContent = `Welcome, ${username}`;
           welcomeMsg.style.display = "list-item";
@@ -28,24 +48,22 @@ document.addEventListener("DOMContentLoaded", () => {
           loginLink.style.display = "none";
           registerLink.style.display = "none";
 
-          // Fetch user role from Firestore
           const userSnap = await getDoc(doc(db, "users", user.uid));
           const role = userSnap.exists() ? userSnap.data().role : null;
 
-          // Show/hide links based on role
           if (role === "admin") {
-            // Admin users don't see the navbar
-            window.location.href = "admin.html"; // Redirect admins to admin page
+            window.location.href = "admin.html";
           } else if (role === "user") {
-            // User role: show user links
             userLinks.forEach(link => link.style.display = "inline");
           } else {
-            // Unknown role, hide both
             userLinks.forEach(link => link.style.display = "none");
           }
 
+          // Start the inactivity timer AFTER confirming user is logged in
+          resetInactivityTimer();
+          attachActivityListeners();
+
         } else {
-          // Not logged in or unverified
           welcomeMsg.style.display = "none";
           logoutLink.style.display = "none";
           loginLink.style.display = "inline";
@@ -54,14 +72,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
 
-      // Logout handler
-      const logoutBtn = document.getElementById("logoutBtn");
+      // Manual logout
       if (logoutBtn) {
         logoutBtn.addEventListener("click", async (e) => {
           e.preventDefault();
           await signOut(auth);
-          sessionStorage.removeItem("user"); // optional
-          location.reload(); // refresh to update navbar
+          sessionStorage.removeItem("user");
+          location.reload();
         });
       }
     });

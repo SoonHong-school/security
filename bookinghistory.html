@@ -1,28 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Bookings | Sport Facility Booking</title>
-  <link rel="stylesheet" href="assets/css/style.css" />
-  <link rel="stylesheet" href="assets/css/navbar.css" />
-</head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Booking History | Sport Facility</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/navbar.css">
 
+  <style>
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    .history-table th,
+    .history-table td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+
+    .history-table th {
+      background: #f0f0f0;
+    }
+
+    .status-pending { color: orange; font-weight: bold; }
+    .status-approved { color: green; font-weight: bold; }
+    .status-rejected { color: red; font-weight: bold; }
+  </style>
+</head>
 <body>
-  <!-- Navbar placeholder -->
+
   <div id="navbar"></div>
 
   <div class="container">
-    <h2>My Booking History</h2>
-    <div id="bookingList"></div>
+    <h2>Your Booking History</h2>
+
+    <table class="history-table">
+      <thead>
+        <tr>
+          <th>Facility</th>
+          <th>Date</th>
+          <th>Time</th>
+          <th>Status</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody id="bookingHistory"></tbody>
+    </table>
   </div>
 
-  <!-- Load the navbar dynamically -->
   <script type="module" src="assets/js/navbar.js"></script>
+  <script type="module" src="assets/js/booking-history.js"></script>
 
-  <!-- Firebase profile logic -->
-  <script type="module" src="assets/js/profile.js"></script>
 </body>
-
 </html>
