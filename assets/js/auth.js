@@ -138,7 +138,9 @@ if (registerBtn) {
         banned: false,
         verified: false,
         termsAccepted: true,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        loginAttempts: 0,
+        lastFailedLogin: null
       });
 
       await sendEmailVerification(user);
@@ -165,17 +167,31 @@ if (loginBtn) {
     const email = emailField.value.trim();
     const password = passwordField.value;
 
-    // Reset error message before validating
+    // Reset previous error message
     loginErrorMessage.style.display = 'none'; // Hide the error message initially
     loginErrorMessage.textContent = '';
 
+    // Check if fields are empty
+    if (!email) {
+      loginErrorMessage.style.display = 'block';
+      loginErrorMessage.textContent = "Please enter your email address.";
+      return;
+    }
+
+    if (!password) {
+      loginErrorMessage.style.display = 'block';
+      loginErrorMessage.textContent = "Please enter your password.";
+      return;
+    }
+
+    // Validate email format
     if (!validateEmail(email)) {
       loginErrorMessage.style.display = 'block';
       loginErrorMessage.textContent = "Please enter a valid email address.";
       return;
     }
 
-    // Basic rate limiting (locking out after 5 attempts)
+    // Check for rate limiting (too many attempts)
     if (loginAttempts >= 5) {
       loginErrorMessage.style.display = 'block';
       loginErrorMessage.textContent = "Too many login attempts. Please try again later.";
@@ -188,6 +204,7 @@ if (loginBtn) {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
+      // Check if email is verified
       if (!user.emailVerified) {
         loginErrorMessage.style.display = 'block';
         loginErrorMessage.textContent = "Please verify your email before logging in.";
@@ -206,21 +223,53 @@ if (loginBtn) {
         return;
       }
 
-      // Check if the user is an admin
+      // Update last login time
+      await setDoc(userRef, {
+        lastLogin: serverTimestamp()
+      }, { merge: true });
+
+      // Redirect based on user role (admin or regular user)
       if (userData.role === "admin") {
-        // Admin detected, redirect to the admin dashboard
         window.location.href = "admin.html";
       } else {
-        // Regular user, redirect to the regular user page
         window.location.href = "index.html";
       }
 
+      // Store user data in session storage
       sessionStorage.setItem("user", JSON.stringify({ email: user.email, uid: user.uid }));
 
     } catch (error) {
       console.error("Login error:", error);
+
+      // Display specific error messages based on error code
       loginErrorMessage.style.display = 'block';
-      loginErrorMessage.textContent = getFriendlyErrorMessage(error.code);
+
+      switch (error.code) {
+        case "auth/invalid-email":
+          loginErrorMessage.textContent = "The email address is invalid. Please enter a valid email address.";
+          break;
+        case "auth/user-not-found":
+          loginErrorMessage.textContent = "No account found with this email. Please check your email or sign up.";
+          break;
+        case "auth/wrong-password":
+          loginErrorMessage.textContent = "Incorrect password. Please check and try again.";
+          break;
+        case "auth/too-many-requests":
+          loginErrorMessage.textContent = "Too many login attempts. Please try again later.";
+          break;
+        case "auth/network-request-failed":
+          loginErrorMessage.textContent = "Network error. Please check your internet connection and try again.";
+          break;
+        case "auth/email-already-in-use":
+          loginErrorMessage.textContent = "This email is already in use by another account.";
+          break;
+        case "auth/invalid-login-credentials":
+          loginErrorMessage.textContent = "Invalid login credentials. Please check your email and password.";
+          break;
+        default:
+          loginErrorMessage.textContent = "An unexpected error occurred. Please try again later.";
+          break;
+      }
     }
   });
 }
@@ -241,6 +290,7 @@ if (!window.authListenerInitialized) {
     }
   });
 }
+
 
 // ----------------- Logout -----------------
 export async function logout() {
